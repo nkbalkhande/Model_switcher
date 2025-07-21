@@ -7,10 +7,16 @@ body {
 }
 
 .app-container {
-    background: #f9f9f9;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    margin: 50px auto;
+    padding: 30px;
+    border-radius: 12px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
 }
 
 .form-group {
@@ -23,12 +29,16 @@ label {
     font-weight: bold;
 }
 
+input,
 select,
 textarea {
     width: 100%;
-    padding: 8px;
+    padding: 10px;
+    font-size: 1em;
+    box-sizing: border-box;
     border: 1px solid #ddd;
     border-radius: 4px;
+    margin-top: 5px;
 }
 
 textarea {
@@ -37,18 +47,23 @@ textarea {
 }
 
 button {
-    padding: 10px 15px;
-    background: #007bff;
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+    background-color: #4285f4;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
 }
 
 button:disabled {
     background: #cccccc;
     cursor: not-allowed;
+}
+
+button:hover {
+    background-color: #3367d6;
 }
 
 #output {
@@ -63,4 +78,39 @@ button:disabled {
 #responseText {
     white-space: pre-wrap;
     word-wrap: break-word;
+}
+
+.auth-form {
+    max-width: 400px;
+    margin: auto;
+}
+
+.auth-links {
+    text-align: right;
+    margin-bottom: 10px;
+}
+
+.auth-links a {
+    margin-left: 10px;
+}
+
+p {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.history-item {
+    margin-bottom: 15px;
+}
+
+.history-item p {
+    margin: 4px 0;
+}
+
+#responseText {
+    max-height: 400px;
+    overflow-y: auto;
+    background: #fefefe;
+    padding: 15px;
+    border-radius: 8px;
 }

@@ -41,8 +41,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const data = await response.json();
 
-            // ✅ Use marked to parse markdown to HTML
-            responseText.innerHTML = marked.parse(data.output || "No output received.");
+            // ✅ Format response using markdown
+            const latestResponse = marked.parse(data.output || "No output received.");
+
+            // ✅ Show full history (last 5 messages)
+            if (data.history && Array.isArray(data.history)) {
+                const historyHtml = data.history.map(
+                    (turn, idx) => `
+                        <div class="chat-turn">
+                            <p><strong>You:</strong> ${turn.input}</p>
+                            <p><strong>AI:</strong> ${marked.parse(turn.output)}</p>
+                            <hr>
+                        </div>`
+                ).join('');
+                responseText.innerHTML = historyHtml;
+            } else {
+                responseText.innerHTML = latestResponse;
+            }
+
             outputDiv.scrollIntoView({ behavior: 'smooth' });
 
         } catch (error) {

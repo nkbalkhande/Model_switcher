@@ -5,13 +5,31 @@
     <meta charset="UTF-8">
     <title>AI Model Switcher</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <!-- ✅ Include marked.js for Markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 
 <body>
     <div class="app-container">
-        <h1>AI Model Switcher</h1>
+
+        <!-- Header Section -->
+        <header>
+            <h1>AI Model Switcher</h1>
+            <div class="auth-links">
+                {% if session['username'] %}
+                <p>Welcome, <strong>{{ session['username'] }}</strong> (Role: {{ session['role'] }})</p>
+                <a href="{{ url_for('logout') }}">Logout</a>
+                {% if session['role'] == "admin" %}
+                | <a href="/admin">Admin Panel</a>
+                {% endif %}
+                {% else %}
+                <a href="/login">Login</a> |
+                <a href="/register">Register</a>
+                {% endif %}
+            </div>
+            <hr>
+        </header>
+
+        <!-- Model Form -->
         <form id="queryForm">
             <div class="form-group">
                 <label for="model">Select Model:</label>
@@ -29,9 +47,9 @@
             <button type="submit" id="submitBtn">Submit</button>
         </form>
 
+        <!-- Output Section -->
         <div id="output">
             <h2>Response:</h2>
-            <!-- ✅ Replace <pre> with <div> to render HTML -->
             <div id="responseText"></div>
         </div>
     </div>
