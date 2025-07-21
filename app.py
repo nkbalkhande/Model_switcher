@@ -1,27 +1,28 @@
-from models import init_db, register_user, get_user
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableBranch
-from dotenv import load_dotenv
-from werkzeug.security import generate_password_hash, check_password_hash
 import os
+from models import init_db, get_user, register_user, save_chat, get_user_history
 
-# ✅ Load environment variables
+# Load environment variables
 load_dotenv()
 gemini_key = os.getenv('Gemini_key')
 groq_key = os.getenv('Groq_key')
 
-# ✅ Import DB functions from models.py
-
-# ✅ Initialize Flask app and DB
+# Initialize Flask app
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
-init_db()  # creates users.db and users table if not exist
 
-# ✅ Define Models
+# Create DB
+init_db()
+
+# Define Models
 gemini_model = ChatGoogleGenerativeAI(
     model='gemini-1.5-flash', google_api_key=gemini_key)
 llama_model = ChatGroq(model='llama3-70b-8192', api_key=groq_key)
@@ -34,7 +35,7 @@ mixtral_model = ChatGroq(model='mixtral-8x7b-32768', api_key=groq_key)
 def home():
     if 'username' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html')
+    return render_template('index.html', user=session['username'], role=session.get('role'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -44,8 +45,8 @@ def register():
         password = request.form['password']
         role = request.form['role']
 
-        existing_user = get_user(username)
-        if existing_user:
+        user = get_user(username)
+        if user:
             return "User already exists. Please login."
 
         register_user(username, password, role)
@@ -61,7 +62,7 @@ def login():
 
         user = get_user(username)
         if user and check_password_hash(user[2], password):
-            session['username'] = username
+            session['username'] = user[1]
             session['role'] = user[3]
             return redirect(url_for('home'))
         return "Invalid credentials."
@@ -74,26 +75,30 @@ def logout():
     return redirect(url_for('login'))
 
 
-# ✅ In-memory chat history (can be replaced with DB later)
-chat_history_db = {}  # username: list of {'input': ..., 'output': ...}
-
-
 @app.route('/api/process', methods=['POST'])
 def process():
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
 
     username = session['username']
-    data = request.json
-    model = data.get('model', 'gemini')
-    user_input = data.get('input', '')
+    model = request.form.get('model', 'gemini')
+    user_input = request.form.get('input', '')
 
-    # Retrieve user history
-    history = chat_history_db.get(username, [])
-    last_turns = history[-3:]
+    # Handle file upload if present
+    file_text = ""
+    uploaded_file = request.files.get('file')
+    if uploaded_file:
+        filename = secure_filename(uploaded_file.filename)
+        file_content = uploaded_file.read().decode('utf-8', errors='ignore')
+        file_text = f"\n\n[File Content:]\n{file_content.strip()}\n"
+
+    combined_input = f"{user_input}\n{file_text}".strip()
+
+    # Get last 3 history messages
+    history = get_user_history(username, 3)
     context = "\n".join(
-        [f"User: {h['input']}\nAI: {h['output']}" for h in last_turns])
-    full_input = f"{context}\nUser: {user_input}" if context else user_input
+        [f"User: {h['input']}\nAI: {h['output']}" for h in history])
+    full_input = f"{context}\nUser: {combined_input}" if context else combined_input
 
     # Prompt templates
     prompt = PromptTemplate(
@@ -106,10 +111,9 @@ def process():
     )
     parser = StrOutputParser()
 
-    # Model chains
+    # Chains
     gemini_chain = (
-        prompt | gemini_model | parser
-        | followup_prompt | command_r_model | parser
+        prompt | command_r_model | parser
         | followup_prompt | gemma_model | parser
         | followup_prompt | llama_model | parser
     )
@@ -118,7 +122,6 @@ def process():
         prompt | llama_model | parser
         | followup_prompt | gemma_model | parser
         | followup_prompt | command_r_model | parser
-        | followup_prompt | gemini_model | parser
     )
 
     branch = RunnableBranch(
@@ -126,18 +129,17 @@ def process():
         groq_chain
     )
 
-    # Run chain
+    # Get output
     output = branch.invoke({'user_input': full_input, 'model': model})
 
-    # Store in chat history
-    chat_history_db.setdefault(username, []).append({
-        'input': user_input,
-        'output': output
-    })
+    # Save to DB
+    save_chat(username, combined_input, output)
+
+    history_output = get_user_history(username)
 
     return jsonify({
         'output': output,
-        'history': chat_history_db[username][-5:]
+        'chat_history': history_output
     })
 
 

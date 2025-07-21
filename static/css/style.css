@@ -78,6 +78,11 @@ button:hover {
 #responseText {
     white-space: pre-wrap;
     word-wrap: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #fefefe;
+    padding: 15px;
+    border-radius: 8px;
 }
 
 .auth-form {
@@ -107,10 +112,24 @@ p {
     margin: 4px 0;
 }
 
-#responseText {
-    max-height: 400px;
-    overflow-y: auto;
-    background: #fefefe;
-    padding: 15px;
-    border-radius: 8px;
+/* 🎤 Mic Button Styling */
+#startVoiceBtn {
+    background-color: #e91e63;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 1em;
+    width: 100%;
+    cursor: pointer;
+}
+
+#startVoiceBtn:hover {
+    background-color: #c2185b;
+}
+
+#startVoiceBtn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
 }
