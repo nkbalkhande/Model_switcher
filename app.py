@@ -1,5 +1,6 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash
 from werkzeug.security import check_password_hash
+from flask import flash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
@@ -8,7 +9,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableBranch
 import os
-from models import init_db, get_user, register_user, save_chat, get_user_history
+from models import init_db, get_user, register_user, save_chat, get_user_history, get_all_users
 
 # Load environment variables
 load_dotenv()
@@ -45,6 +46,10 @@ def register():
         password = request.form['password']
         role = request.form['role']
 
+        # Block anyone trying to register as admin
+        if role == 'admin':
+            return "You are not allowed to register as admin."
+
         user = get_user(username)
         if user:
             return "User already exists. Please login."
@@ -75,6 +80,26 @@ def logout():
     return redirect(url_for('login'))
 
 
+@app.route('/admin', methods=['GET', 'POST'])
+def admin_panel():
+    if 'username' not in session or session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        new_username = request.form['new_username']
+        new_password = request.form['new_password']
+        new_role = request.form['new_role']
+
+        if get_user(new_username):
+            flash('User already exists!')
+        else:
+            register_user(new_username, new_password, new_role)
+            flash('User added successfully!')
+
+    users = get_all_users()
+    return render_template('admin.html', user=session['username'], role=session['role'], users=users)
+
+
 @app.route('/api/process', methods=['POST'])
 def process():
     if 'username' not in session:
@@ -84,7 +109,6 @@ def process():
     model = request.form.get('model', 'gemini')
     user_input = request.form.get('input', '')
 
-    # Handle file upload if present
     file_text = ""
     uploaded_file = request.files.get('file')
     if uploaded_file:
@@ -94,13 +118,11 @@ def process():
 
     combined_input = f"{user_input}\n{file_text}".strip()
 
-    # Get last 3 history messages
     history = get_user_history(username, 3)
     context = "\n".join(
         [f"User: {h['input']}\nAI: {h['output']}" for h in history])
     full_input = f"{context}\nUser: {combined_input}" if context else combined_input
 
-    # Prompt templates
     prompt = PromptTemplate(
         template="You are a helpful assistant. Respond to: {user_input}",
         input_variables=["user_input"]
@@ -111,7 +133,6 @@ def process():
     )
     parser = StrOutputParser()
 
-    # Chains
     gemini_chain = (
         prompt | command_r_model | parser
         | followup_prompt | gemma_model | parser
@@ -129,10 +150,8 @@ def process():
         groq_chain
     )
 
-    # Get output
     output = branch.invoke({'user_input': full_input, 'model': model})
 
-    # Save to DB
     save_chat(username, combined_input, output)
 
     history_output = get_user_history(username)

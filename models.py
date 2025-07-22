@@ -52,6 +52,23 @@ def get_user(username):
     return user
 
 
+def get_all_users():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, username, role FROM users ORDER BY id ASC")
+    users = cursor.fetchall()
+    conn.close()
+    return users
+
+
+def delete_user(user_id):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+
+
 def save_chat(username, user_input, model_output):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()

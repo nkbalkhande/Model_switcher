@@ -133,3 +133,19 @@ p {
     background-color: #ccc;
     cursor: not-allowed;
 }
+
+table {
+    border-collapse: collapse;
+    width: 80%;
+}
+
+table,
+th,
+td {
+    border: 1px solid black;
+    padding: 8px;
+}
+
+th {
+    background-color: #f2f2f2;
+}

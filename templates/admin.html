@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <h1>Admin Panel</h1>
+    <p>Welcome, {{ user }} (Role: {{ role }})</p>
+    <a href="{{ url_for('home') }}">Back to Home</a>
+    <hr>
+
+    <h2>All Registered Users</h2>
+    {% if users %}
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Role</th>
+        </tr>
+        {% for u in users %}
+        <tr>
+            <td>{{ u[0] }}</td>
+            <td>{{ u[1] }}</td>
+            <td>{{ u[2] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No users found.</p>
+    {% endif %}
+
+    <hr>
+    <h3>Add New User</h3>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul style="color: green;">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <form method="POST" action="{{ url_for('admin_panel') }}">
+        <label>Username:</label><br>
+        <input type="text" name="new_username" required><br><br>
+        <label>Password:</label><br>
+        <input type="password" name="new_password" required><br><br>
+        <label>Role:</label><br>
+        <select name="new_role">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+        </select><br><br>
+        <button type="submit">Add User</button>
+    </form>
+</body>
+
+</html>

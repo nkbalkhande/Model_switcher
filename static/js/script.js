@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const responseText = document.getElementById("responseText");
     const chatHistoryList = document.getElementById("chatHistoryList");
     const submitBtn = document.getElementById("submitBtn");
-    const micBtn = document.getElementById("startVoiceBtn");
 
     let recognizing = false;
     let recognition;
@@ -16,14 +15,15 @@ document.addEventListener("DOMContentLoaded", () => {
         recognition.lang = "en-US";
         recognition.interimResults = false;
 
-        micBtn.addEventListener("click", () => {
+        const speakBtn = document.getElementById("startVoiceBtn");
+        speakBtn.addEventListener("click", () => {
             if (!recognizing) {
                 recognition.start();
-                micBtn.textContent = "🎙️ Listening...";
+                speakBtn.textContent = "🎙️ Listening...";
                 recognizing = true;
             } else {
                 recognition.stop();
-                micBtn.textContent = "🎤 Speak";
+                speakBtn.textContent = "🎤 Speak";
                 recognizing = false;
             }
         });
@@ -34,17 +34,18 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         recognition.onerror = function (event) {
-            console.error("Speech recognition error", event.error);
-            micBtn.textContent = "🎤 Speak";
+            console.error("Speech recognition error:", event.error);
+            recognizing = false;
         };
 
         recognition.onend = function () {
-            micBtn.textContent = "🎤 Speak";
+            document.getElementById("startVoiceBtn").textContent = "🎤 Speak";
             recognizing = false;
         };
     } else {
-        micBtn.disabled = true;
-        micBtn.textContent = "Voice not supported";
+        const speakBtn = document.getElementById("startVoiceBtn");
+        speakBtn.disabled = true;
+        speakBtn.textContent = "Voice not supported";
     }
 
     // Submit form logic
@@ -74,7 +75,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 data.chat_history.forEach(item => {
                     const el = document.createElement("div");
                     el.className = "history-item";
-                    el.innerHTML = `<p><strong>You:</strong> ${item.input}</p><p><strong>AI:</strong> ${item.output}</p>`;
+                    el.innerHTML = `
+                        <p><strong>You:</strong> ${item.input}</p>
+                        <p><strong>AI:</strong> ${marked.parse(item.output)}</p>
+                        <hr>`;
                     chatHistoryList.appendChild(el);
                 });
             }
