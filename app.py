@@ -25,7 +25,7 @@ init_db()
 
 # Define Models
 gemini_model = ChatGoogleGenerativeAI(
-    model='gemini-1.5-flash', google_api_key=gemini_key)
+    model='gemini-2.0-flash', google_api_key=gemini_key)
 llama_model = ChatGroq(model='llama3-70b-8192', api_key=groq_key)
 command_r_model = ChatGroq(model='llama3-8b-8192', api_key=groq_key)
 gemma_model = ChatGroq(model='deepseek-r1-distill-llama-70b', api_key=groq_key)
